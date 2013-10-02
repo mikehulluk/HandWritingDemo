@@ -247,7 +247,7 @@ void simulate(
     // Decay neuron inputs (implementing the post-synaptic filter)
     // except input layer
     for (i = net->sizeInputLayer; i < NUM_LIF_NEURONS; i++)
-      inp[i] = mul(inp[i], 1024-pstc_scale);
+      inp[i] = inp[i] * ( 1024-pstc_scale) / 1024;
 
     // For each neuron that spikes, increase the input current
     // of all the neurons it is connected to by the synaptic
@@ -268,7 +268,7 @@ void simulate(
       total[i] += net->constInput[i];
     // Apply gain and bias
     for (i = 0; i < NUM_LIF_NEURONS; i++)
-      total[i] = mul(net->gain[i],total[i])+net->bias[i];
+      total[i] = (net->gain[i]*total[i] / 1024.)+net->bias[i];
 
     numSpikes = runNeurons(total, v, ref, spikes);
   }
@@ -297,7 +297,7 @@ void assignExternalInput(Network* net, int* total, int* externalInput)
   for (i = 0; i < NUM_INPUTS; i++) {
     TargetArray t = net->inTargets[i];
     for (j = 0; j < t.numTargets; j++)
-      total[t.targets[j]] += mul(t.weights[j], externalInput[i]);
+      total[t.targets[j]] += (t.weights[j] * externalInput[i] / 1024.);
   }
 }
 
