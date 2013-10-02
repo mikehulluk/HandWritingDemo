@@ -256,7 +256,7 @@ void simulate(
       TargetArray t = net->targets[spikes[i]];
       spikeCount[spikes[i]]++;
       for (j = 0; j < t.numTargets; j++)
-        inp[t.targets[j]] += mul(t.weights[j],pstc_scale);
+        inp[t.targets[j]] += (t.weights[j] * pstc_scale) / 1024.;
     }
 
     // Compute the total input into each neuron
