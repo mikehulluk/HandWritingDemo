@@ -1,5 +1,5 @@
 Sim: Handwriting.h LIFDesktop.c
-	gcc -O2 LIFDesktop.c -o Sim
+	gcc -Wall -O2  -std=c99 LIFDesktop.c -o Sim
 
 Output/flash.bin Handwriting.h: TextToBin
 	./TextToBin > Handwriting.h

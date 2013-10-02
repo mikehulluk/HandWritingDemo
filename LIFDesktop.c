@@ -40,7 +40,7 @@ typedef struct {
 
 int** readMatrix(const int* data, int rows, int cols)
 {
-  int i, j;
+  int i;
   int** m;
   m = malloc(rows * sizeof(int*));
   for (i = 0; i < rows; i++)
@@ -167,9 +167,8 @@ Network* createNetwork()
 
 int dot(int* v, int* w)
 {
-  int i;
   int acc = 0;
-  for (i = 0; i < 50; i++)
+  for (int i = 0; i < 50; i++)
     acc += (v[i]/1024.) * w[i];
   return acc;
 }
@@ -181,9 +180,8 @@ void answer(Network* net, int** semPtr, int* inp, int* ans)
   int* out = inp+(NUM_LIF_NEURONS-net->sizeOutputLayer);
   int maxScore = 0x80000000;
   int minScore = 0x7fffffff;
-  int i;
     
-  for (i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++) {
     ans[i] = dot(semPtr[i], out);
     if (ans[i] >= maxScore) maxScore = ans[i];
     if (ans[i] <= minScore) minScore = ans[i];
@@ -191,11 +189,11 @@ void answer(Network* net, int** semPtr, int* inp, int* ans)
 
   // Make scores start from 0
   maxScore += -minScore;
-  for (i = 0; i < 10; i++)
+  for (int i = 0; i < 10; i++)
     ans[i] += -minScore;
 
   // Put in range 0..160
-  for (i = 0; i < 10; i++)
+  for (int i = 0; i < 10; i++)
     ans[i] = (ans[i]*140) / maxScore;
 }
 
@@ -205,13 +203,12 @@ const int one_over_rc = 50;  // 1/t_rc
 const int t_ref       = 2;   // Milliseconds
 const int pstc_scale  = 158; // 1-e^(-dt/t_pstc);
 
-int runNeurons(int* input, int* v, int* ref, int* spikes)
+int runNeurons(int* input, float* v, int* ref, int* spikes)
 {
-  int i;
   int numSpikes = 0;
 
-  for (i = 0; i < NUM_LIF_NEURONS; i++) {
-    int dV = (input[i]/1024.-v[i]/1024.)  * one_over_rc;            // the LIF voltage change equation
+  for (int i = 0; i < NUM_LIF_NEURONS; i++) {
+    int dV = (input[i]-v[i])  * one_over_rc/1024.;            // the LIF voltage change equation
     v[i] += dV;
     if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
 
@@ -231,7 +228,7 @@ int runNeurons(int* input, int* v, int* ref, int* spikes)
 
 void simulate(
     Network* net
-  , int* v          // Voltage of each LIF neuron
+  , float* v          // Voltage of each LIF neuron
   , int* ref        // Refactory period of each LIF neuron
   , int* inp        // Current input to each neuron
   , int* total      // Input to each neuron (after applying gain and bias)
@@ -280,7 +277,7 @@ void simulate(
 
 typedef struct {
   Network* net;
-  int* v;          // Voltage of each neuron
+  float* v;          // Voltage of each neuron
   int* ref;        // Refactory period of each neuron
   int* inp;        // Input to each neuron
   int* total;      // Input after apply gain and bias
@@ -308,7 +305,7 @@ Recogniser* createRecogniser()
   Recogniser* r = malloc(sizeof(Recogniser));
   r->semPtr = readMatrix(SemPtr, 10, 50);
   r->net = createNetwork();
-  r->v = calloc(NUM_LIF_NEURONS, sizeof(int));
+  r->v = calloc(NUM_LIF_NEURONS, sizeof(float));
   r->ref = calloc(NUM_LIF_NEURONS, sizeof(int));
   r->inp = calloc(NUM_LIF_NEURONS, sizeof(int));
   r->total = calloc(NUM_LIF_NEURONS, sizeof(int));
@@ -320,7 +317,7 @@ Recogniser* createRecogniser()
 
 void recognise(Recogniser* r, int *image28by28, int* ans)
 {
-  memset(r->v, 0, sizeof(int)*NUM_LIF_NEURONS);
+  memset(r->v, 0, sizeof(float)*NUM_LIF_NEURONS);
   memset(r->ref, 0, sizeof(int)*NUM_LIF_NEURONS);
   memset(r->inp, 0, sizeof(int)*NUM_LIF_NEURONS);
   memset(r->total, 0, sizeof(int)*NUM_LIF_NEURONS);
@@ -332,16 +329,16 @@ void recognise(Recogniser* r, int *image28by28, int* ans)
 
 int best(int* ans)
 {
-  int i, b;
+  int b = 0;
   int max = 0x80000000;
-  for (i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++) {
     if (ans[i] > max) { max = ans[i]; b = i; }
   }
   return b;
 }
 
 
-void main()
+int main()
 {
   int i;
   int answer[10];
@@ -349,16 +346,15 @@ void main()
   // Do recognition on 100 samples
   // The sample set contains 10 of each digit, sorted by digit.
   //
-  //
-  //
-  //int expected_ans[] =  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 9, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 2, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
   int expected_ans[] =  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 2, 8, 2, 1, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
   for (i = 0; i < 100; i++) {
     recognise(r, r->samples[i], answer);
     int ans = best(answer);
     printf("%i ", ans);
 
-    //assert( ans == expected_ans[i] );
+    assert( ans == expected_ans[i] );
   }
   printf("\n");
+
+  return 0;
 }
