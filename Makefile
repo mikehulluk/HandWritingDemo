@@ -6,7 +6,7 @@ Output/flash.bin Handwriting.h: TextToBin
 	@echo "New version of Handwriting.h has been generated"
 
 TextToBin:
-	gcc TextToBin.c -o TextToBin
+	g++ TextToBin.c -o TextToBin
 
 .PHONY: clean
 
