@@ -32,7 +32,7 @@ typedef struct {
 
 // Integer n represents fixed-point number n/1024.
 
-inline int mul(int x, int y) { return (x*y)>>10; }
+//inline int mul(int x, int y) { return (x*y)>>10; }
 
 // IO =========================================================================
 
