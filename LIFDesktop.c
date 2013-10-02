@@ -170,7 +170,7 @@ int dot(int* v, int* w)
   int i;
   int acc = 0;
   for (i = 0; i < 50; i++)
-    acc += mul(v[i],w[i]);
+    acc += (v[i]/1024.) * w[i];
   return acc;
 }
 
@@ -211,8 +211,7 @@ int runNeurons(int* input, int* v, int* ref, int* spikes)
   int numSpikes = 0;
 
   for (i = 0; i < NUM_LIF_NEURONS; i++) {
-    int dV = mul(input[i]-v[i],
-                 one_over_rc);            // the LIF voltage change equation
+    int dV = (input[i]/1024.-v[i]/1024.)  * one_over_rc;            // the LIF voltage change equation
     v[i] += dV;
     if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
 
