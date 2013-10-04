@@ -221,33 +221,6 @@ const int pstc_scale  = 158; // 1-e^(-dt/t_pstc);
 #define pstc_scale_float  ((pstc_scale) / 1024.)
 
 
-int runNeurons(float* input, float* v, float* ref, int* spikes)
-{
-
-  int numSpikes = 0;
-
-  for (int i = 0; i < NUM_LIF_NEURONS; i++) {
-    // the LIF voltage change equation
-    v[i] += (input[i]-v[i]) * one_over_rc_float;
-
-    if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
-
-    if (ref[i] > 0) {                     // if we are in our refractory period
-      v[i] = 0;                           //   keep voltage at zero and
-      ref[i] -= 1;                        //   decrease the refractory period
-    }
-
-    if (v[i] > 1.0) {                    // if we have hit threshold
-      spikes[numSpikes++] = i;            //   spike
-      v[i] = 0;                           //   reset the voltage
-      ref[i] = t_ref;                     //   and set the refractory period
-    }
-  }
-  return numSpikes;
-}
-
-
-
 
 void simulate(
     Network* net
@@ -261,7 +234,10 @@ void simulate(
   )
 {
 
-  for (int t = 0; t < ms; t++) {
+  for (int t = 0; t < ms; t++) 
+  {
+
+
 
     // Compute the total input into each neuron
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
@@ -278,7 +254,41 @@ void simulate(
 
 
 
-    int numSpikes = runNeurons(total, v, ref, spikes);
+
+
+
+      int numSpikes = 0;
+
+      for (int i = 0; i < NUM_LIF_NEURONS; i++) {
+        // the LIF voltage change equation
+        v[i] += (total[i]-v[i]) * one_over_rc_float;
+
+        if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
+
+        if (ref[i] > 0) {                     // if we are in our refractory period
+          v[i] = 0;                           //   keep voltage at zero and
+          ref[i] -= 1;                        //   decrease the refractory period
+        }
+
+        if (v[i] > 1.0) {                    // if we have hit threshold
+          spikes[numSpikes++] = i;            //   spike
+          v[i] = 0;                           //   reset the voltage
+          ref[i] = t_ref;                     //   and set the refractory period
+        }
+      }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // For each neuron that spikes, increase the input current
     // of all the neurons it is connected to by the synaptic
@@ -317,7 +327,6 @@ typedef struct {
 
 void assignExternalInput(Network* net, float* total, float* externalInput)
 {
-  //int i, j;
 
   for (int i = 0; i < net->sizeInputLayer; i++) total[i] = 0;
 
@@ -375,7 +384,6 @@ int main()
   // The sample set contains 10 of each digit, sorted by digit.
   //
   int expected_ans[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 2, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
-  //int expected_ans[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 9, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 2, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
   for (i = 0; i < 100; i++) {
     recognise(r, r->samples[i], answer);
     int ans = best(answer);
