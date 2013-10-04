@@ -8,6 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <limits.h>
+#include <float.h>
+
 #include "Handwriting.h"
 
 // Data structures ============================================================
@@ -71,17 +74,12 @@ float** readFloatMatrix(const float* data, int rows, int cols, float downscale)
 #define NUM_RBM_NEURONS (1000+500+300)
 #define NUM_LIF_NEURONS (NUM_RBM_NEURONS*LIF_PER_RBM + NUM_OUTPUTS)
 
-// The bias, gain and decoder of every LIF neuron trio
-//int sigmoid_bias[]    = {10567, 6092, 655};
-//int sigmoid_gain[]    = {8990, 1413, 10260};
-//int sigmoid_decoder[] = {1054, 1402, 880};
 
 float sigmoid_bias_fl[]    = {10.31933, 5.94921, 0.63964};
 float sigmoid_gain_fl[]    = {8.7792, 1.37988, 10.0195};
 float sigmoid_decoder_fl[] = {1.0292, 1.36914, 0.85937};
 
-void createConstInput(float* constInput, int numNeuron,
-                        int lifPerNeuron, float** inp)
+void createConstInput(float* constInput, int numNeuron, int lifPerNeuron, float** inp)
 {
   for (int i = 0; i < numNeuron; i++) {
     int base = i*lifPerNeuron;
@@ -147,6 +145,9 @@ Network* createNetwork()
     for (int j = 0; j < LIF_PER_RBM; j++) {
       net->gain[base+j] = sigmoid_gain_fl[j];
       net->bias[base+j] = sigmoid_bias_fl[j];
+      
+      //net->gain[base+j] = sigmoid_gain_fl[j];
+      //net->bias[base+j] = sigmoid_bias_fl[j];
     }
   }
 
@@ -189,25 +190,21 @@ void answer(Network* net, float** semPtr, float* inp, int* ans)
 {
 
   float* out = inp +(NUM_LIF_NEURONS-net->sizeOutputLayer);
-  int maxScore = 0x80000000;
-  int minScore = 0x7fffffff;
 
-
+  float maxScore = FLT_MIN;
+  float minScore = FLT_MAX;
 
   for (int i = 0; i < 10; i++) {
     ans[i] = dot(semPtr[i], out); 
     if (ans[i] >= maxScore) maxScore = ans[i];
     if (ans[i] <= minScore) minScore = ans[i];
   }
-
-  // Make scores start from 0
+  
+  // Rescale the range from 0 to 140:
   maxScore += -minScore;
   for (int i = 0; i < 10; i++)
-    ans[i] += -minScore;
+    ans[i] = (ans[i]-minScore) / (maxScore-minScore) * 140;
 
-  // Put in range 0..160
-  for (int i = 0; i < 10; i++)
-    ans[i] = (ans[i]*140) / maxScore;
 }
 
 // LIF simulator ==============================================================
@@ -234,48 +231,9 @@ void simulate(
   )
 {
 
-  for (int t = 0; t < ms; t++) 
-  {
 
-
-
-    // Compute the total input into each neuron
-    for (int i = 0; i < NUM_LIF_NEURONS; i++)
-    {
-      total[i] = (net->gain[i] * (inp[i] + net->constInput[i]) )+net->bias[i];
-      v[i] += (total[i]-v[i]) * one_over_rc_float;
-    }
-
-    // Decay neuron inputs (implementing the post-synaptic filter)
-    // except input layer
-    for (int i = net->sizeInputLayer; i < NUM_LIF_NEURONS; i++)
-    {
-      inp[i] *= (1.- pstc_scale_float) ;
-    }
-
-
-
-
-
-
-      int numSpikes = 0;
-
-      for (int i = 0; i < NUM_LIF_NEURONS; i++) {
-        // the LIF voltage change equation
-
-        if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
-
-        if (ref[i] > 0) {                     // if we are in our refractory period
-          v[i] = 0;                           //   keep voltage at zero and
-          ref[i] -= 1;                        //   decrease the refractory period
-        }
-
-        if (v[i] > 1.0) {                    // if we have hit threshold
-          spikes[numSpikes++] = i;            //   spike
-          v[i] = 0;                           //   reset the voltage
-          ref[i] = t_ref;                     //   and set the refractory period
-        }
-      }
+    // Dump out the current parameters:
+    //
 
 
 
@@ -283,28 +241,66 @@ void simulate(
 
 
 
-
-
-
-
-
-
-
-    // For each neuron that spikes, increase the input current
-    // of all the neurons it is connected to by the synaptic
-    // connection weight
-    for (int i = 0; i < numSpikes; i++) {
-      TargetArray t = net->targets[spikes[i]];
-      spikeCount[spikes[i]]++;
-      for (int j = 0; j < t.numTargets; j++)
+      for (int t = 0; t < ms; t++) 
       {
-        inp[t.targets[j]] += ( (t.weights[j]) * pstc_scale_float); 
+    
+    
+    
+        // Compute the total input into each neuron
+        for (int i = 0; i < NUM_LIF_NEURONS; i++)
+        {
+          total[i] = (net->gain[i] * (inp[i] + net->constInput[i])) + net->bias[i];
+          v[i] += (total[i]-v[i]) * one_over_rc_float;
+        }
+    
+        // Decay neuron inputs (implementing the post-synaptic filter)
+        // except input layer
+        for (int i = net->sizeInputLayer; i < NUM_LIF_NEURONS; i++)
+        {
+          inp[i] *= (1.- pstc_scale_float) ;
+        }
+    
+    
+    
+    
+    
+    
+          int numSpikes = 0;
+    
+          for (int i = 0; i < NUM_LIF_NEURONS; i++) {
+            // the LIF voltage change equation
+    
+            if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
+    
+            if (ref[i] > 0) {                     // if we are in our refractory period
+              v[i] = 0;                           //   keep voltage at zero and
+              ref[i] -= 1;                        //   decrease the refractory period
+            }
+    
+            if (v[i] > 1.0) {                    // if we have hit threshold
+              spikes[numSpikes++] = i;            //   spike
+              v[i] = 0;                           //   reset the voltage
+              ref[i] = t_ref;                     //   and set the refractory period
+            }
+          }
+    
+    
+    
+        // For each neuron that spikes, increase the input current
+        // of all the neurons it is connected to by the synaptic
+        // connection weight
+        for (int i = 0; i < numSpikes; i++) {
+          TargetArray t = net->targets[spikes[i]];
+          spikeCount[spikes[i]]++;
+          for (int j = 0; j < t.numTargets; j++)
+          {
+            inp[t.targets[j]] += ( (t.weights[j]) * pstc_scale_float); 
+          }
+        }
+    
+    
+    
       }
-    }
-
-
-
-  }
 
 
 
