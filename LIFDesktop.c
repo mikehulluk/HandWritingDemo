@@ -46,7 +46,16 @@ float** readFloatMatrix(const float* data, int rows, int cols)
   float** m;
   m = malloc(rows * sizeof(float*));
   for (int i = 0; i < rows; i++)
-    m[i] = (float*) &data[i*cols] / 1024.;
+  {
+    m[i] = malloc( cols * sizeof(float) );
+    memcpy(m[i],  &data[i*cols], sizeof(float)*cols );
+
+    for(int x=0;x<cols;x++)
+    {
+        m[i][x] /= 1024.f;
+    }
+
+  }
   return m;
 }
 // Sample network (performs hand-written digit recognition) ===================
