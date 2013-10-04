@@ -80,18 +80,17 @@ void createConnections(
   , float** weights
   )
 {
-  int i, j, x, y;
 
-  for (i = 0; i < numSource; i++) {
+  for (int i = 0; i < numSource; i++) {
     int base = i*lifPerSource;
-    for (j = 0; j < lifPerSource; j++) {
+    for (int j = 0; j < lifPerSource; j++) {
       int space = numTarget*lifPerTarget;
       t[base+j].numTargets = 0;
       t[base+j].targets = malloc(sizeof(int) * space);
       t[base+j].weights = malloc(sizeof(float) * space);
-      for (x = 0; x < numTarget; x++)
+      for (int x = 0; x < numTarget; x++)
        if (weights[i][x] != 0)
-        for (y = 0; y < lifPerTarget; y++) {
+        for (int y = 0; y < lifPerTarget; y++) {
           int n = t[base+j].numTargets;
           t[base+j].targets[n] = targetBase + x*lifPerTarget + y;
           t[base+j].weights[n] = weights[i][x];
@@ -200,14 +199,20 @@ const int one_over_rc = 50;  // 1/t_rc
 const int t_ref       = 2;   // Milliseconds
 const int pstc_scale  = 158; // 1-e^(-dt/t_pstc);
 
+
+#define one_over_rc_float ((one_over_rc)/1024.)
+#define pstc_scale_float  ((pstc_scale) / 1024.)
+
+//const float one_over_rc_float =  one_over_rc/1024.;
+//const float pstc_scale_float  = pstc_scale / 1024. ;
+
 int runNeurons(float* input, float* v, float* ref, int* spikes)
 {
 
-  const float one_over_rc_float = one_over_rc/1024.;
   int numSpikes = 0;
 
   for (int i = 0; i < NUM_LIF_NEURONS; i++) {
-    int dV = (input[i]-v[i])  * one_over_rc_float;            // the LIF voltage change equation
+    float dV = (input[i]-v[i])  * one_over_rc_float;            // the LIF voltage change equation
     v[i] += dV;
     if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
 
@@ -242,7 +247,7 @@ void simulate(
     // Decay neuron inputs (implementing the post-synaptic filter)
     // except input layer
     for (int i = net->sizeInputLayer; i < NUM_LIF_NEURONS; i++)
-      inp[i] = inp[i] * ( 1024-pstc_scale) / 1024;
+      inp[i] = inp[i] * (1.- pstc_scale_float); //( 1024-pstc_scale) / 1024;
 
     // For each neuron that spikes, increase the input current
     // of all the neurons it is connected to by the synaptic
@@ -258,14 +263,12 @@ void simulate(
 
     // Compute the total input into each neuron
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
+    {
       total[i] = inp[i];
-
-    // Assign constant input
-    for (int i = 0; i < NUM_LIF_NEURONS; i++)
       total[i] += net->constInput[i];
-    // Apply gain and bias
-    for (int i = 0; i < NUM_LIF_NEURONS; i++)
       total[i] = (net->gain[i]*total[i] / 1024.)+net->bias[i];
+    }
+
 
     numSpikes = runNeurons(total, v, ref, spikes);
   }

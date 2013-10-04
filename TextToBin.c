@@ -22,7 +22,7 @@ void convMatrix(char* filename, int rows, int cols)
   }
   fclose(fp);
 
-  printf("const int %s[] = {\n", filename);
+  printf("const float %s[] = {\n", filename);
   for (i = 0; i < rows; i++)
     for (j = 0; j < cols; j++) {
       printf("%i,", m[i][j]);
