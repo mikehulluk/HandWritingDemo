@@ -28,12 +28,6 @@ typedef struct {
   TargetArray* inTargets; // inTargets[i]: array of targets from input i
 } Network;
 
-// Fixed-point multiply =======================================================
-
-// Integer n represents fixed-point number n/1024.
-
-//inline int mul(int x, int y) { return (x*y)>>10; }
-
 // IO =========================================================================
 
 // Read neural network for handwriting recognition.
@@ -203,8 +197,6 @@ const int pstc_scale  = 158; // 1-e^(-dt/t_pstc);
 #define one_over_rc_float ((one_over_rc)/1024.)
 #define pstc_scale_float  ((pstc_scale) / 1024.)
 
-//const float one_over_rc_float =  one_over_rc/1024.;
-//const float pstc_scale_float  = pstc_scale / 1024. ;
 
 int runNeurons(float* input, float* v, float* ref, int* spikes)
 {
@@ -221,7 +213,7 @@ int runNeurons(float* input, float* v, float* ref, int* spikes)
       ref[i] -= 1;                        //   decrease the refractory period
     }
 
-    if (v[i] > 1024) {                    // if we have hit threshold
+    if (v[i] > 1.0) {                    // if we have hit threshold
       spikes[numSpikes++] = i;            //   spike
       v[i] = 0;                           //   reset the voltage
       ref[i] = t_ref;                     //   and set the refractory period
@@ -265,6 +257,7 @@ void simulate(
     {
       total[i] = inp[i] + net->constInput[i];
       total[i] = (net->gain[i]*total[i] / 1024.)+net->bias[i];
+      total[i] /= 1024.;
     }
 
 
