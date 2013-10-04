@@ -243,6 +243,7 @@ void simulate(
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
     {
       total[i] = (net->gain[i] * (inp[i] + net->constInput[i]) )+net->bias[i];
+      v[i] += (total[i]-v[i]) * one_over_rc_float;
     }
 
     // Decay neuron inputs (implementing the post-synaptic filter)
@@ -261,7 +262,6 @@ void simulate(
 
       for (int i = 0; i < NUM_LIF_NEURONS; i++) {
         // the LIF voltage change equation
-        v[i] += (total[i]-v[i]) * one_over_rc_float;
 
         if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
 
