@@ -277,7 +277,7 @@ void simulate(
       spikeCount[spikes[i]]++;
       for (int j = 0; j < t.numTargets; j++)
       {
-        inp[t.targets[j]] += (t.weights[j] * pstc_scale_float); // /1024.; 
+        inp[t.targets[j]] += (t.weights[j] * pstc_scale_float) /1024.; 
       }
     }
 
@@ -285,7 +285,7 @@ void simulate(
     // Compute the total input into each neuron
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
     {
-      float s = (inp[i]/1024. + net->constInput[i]);
+      float s = (inp[i] + net->constInput[i]);
       total[i] = (net->gain[i] * s )+net->bias[i];
     }
 
@@ -305,7 +305,7 @@ void simulate(
 
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
     {
-      //inp[i] *= 1024;
+      inp[i] *= 1024;
     }
 
 
@@ -334,7 +334,7 @@ void assignExternalInput(Network* net, float* total, float* externalInput)
   for (i = 0; i < NUM_INPUTS; i++) {
     TargetArray t = net->inTargets[i];
     for (j = 0; j < t.numTargets; j++)
-      total[t.targets[j]] += (t.weights[j] * externalInput[i] / 1024.);
+      total[t.targets[j]] += (t.weights[j] * externalInput[i] ) / 1024. / 1024.;
   }
 }
 
