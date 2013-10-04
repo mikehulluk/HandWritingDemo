@@ -123,13 +123,13 @@ Network* createNetwork()
 
   /* Read the 4-layer RBM network available from nengo.ca */
   float** b1 = readFloatMatrix(mat_1_b, 1, 1000,   1024);
-  float** w1 = readFloatMatrix(mat_1_w, 784, 1000, 1);
+  float** w1 = readFloatMatrix(mat_1_w, 784, 1000, 1024);
   float** b2 = readFloatMatrix(mat_2_b, 1, 500,    1024);
-  float** w2 = readFloatMatrix(mat_2_w, 1000, 500, 1);
+  float** w2 = readFloatMatrix(mat_2_w, 1000, 500, 1024);
   float** b3 = readFloatMatrix(mat_3_b, 1, 300,    1024);
-  float** w3 = readFloatMatrix(mat_3_w, 500, 300,  1);
+  float** w3 = readFloatMatrix(mat_3_w, 500, 300,  1024);
   float** b4 = readFloatMatrix(mat_4_b, 1, 50,     1024);
-  float** w4 = readFloatMatrix(mat_4_w, 300, 50,   1);
+  float** w4 = readFloatMatrix(mat_4_w, 300, 50,   1024);
 
   // Allocate Network
   Network* net = malloc(sizeof(Network));
@@ -277,7 +277,7 @@ void simulate(
       spikeCount[spikes[i]]++;
       for (int j = 0; j < t.numTargets; j++)
       {
-        inp[t.targets[j]] += ( (t.weights[j]/1024) * pstc_scale_float); 
+        inp[t.targets[j]] += ( (t.weights[j]) * pstc_scale_float); 
       }
     }
 
@@ -334,7 +334,7 @@ void assignExternalInput(Network* net, float* total, float* externalInput)
   for (int i = 0; i < NUM_INPUTS; i++) {
     TargetArray t = net->inTargets[i];
     for (int j = 0; j < t.numTargets; j++)
-      total[t.targets[j]] += ( (t.weights[j]/1024) * externalInput[i] ) / 1024.;
+      total[t.targets[j]] += ( (t.weights[j]) * externalInput[i] ) / 1024.;
   }
 }
 
