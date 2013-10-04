@@ -86,7 +86,7 @@ void createConstInput(float* constInput, int numNeuron,
   for (int i = 0; i < numNeuron; i++) {
     int base = i*lifPerNeuron;
     for (int j = 0; j < lifPerNeuron; j++)
-      constInput[base+j] = inp[0][i]; //# / 1024;
+      constInput[base+j] = inp[0][i]; 
   }
 }
 
@@ -179,7 +179,7 @@ float dot(float* v, float* w)
 {
   float acc = 0;
   for (int i = 0; i < 50; i++)
-    acc += (v[i]/1024.) * w[i];
+    acc += (v[i]/1024) * w[i];
   return acc;
 }
 
@@ -187,9 +187,17 @@ float dot(float* v, float* w)
 // in the range 0 to 140.
 void answer(Network* net, float** semPtr, float* inp, int* ans)
 {
+
   float* out = inp +(NUM_LIF_NEURONS-net->sizeOutputLayer);
   int maxScore = 0x80000000;
   int minScore = 0x7fffffff;
+
+
+  for (int i = 0; i < 50; i++) {
+        //printf("\nOut: %d %f", i, out[i]);
+  }
+  //return; 
+
 
   for (int i = 0; i < 10; i++) {
     ans[i] = dot(semPtr[i], out);
@@ -269,7 +277,7 @@ void simulate(
       spikeCount[spikes[i]]++;
       for (int j = 0; j < t.numTargets; j++)
       {
-        inp[t.targets[j]] += (t.weights[j] * pstc_scale_float);
+        inp[t.targets[j]] += (t.weights[j] * pstc_scale_float); // /1024.; 
       }
     }
 
@@ -277,7 +285,7 @@ void simulate(
     // Compute the total input into each neuron
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
     {
-      float s = (inp[i]/1024 + net->constInput[i]);
+      float s = (inp[i]/1024. + net->constInput[i]);
       total[i] = (net->gain[i] * s )+net->bias[i];
     }
 
@@ -290,9 +298,17 @@ void simulate(
     {
       inp[i] *= (1.- pstc_scale_float) ;
     }
-
-
   }
+
+
+
+
+    for (int i = 0; i < NUM_LIF_NEURONS; i++)
+    {
+      //inp[i] *= 1024;
+    }
+
+
 }
 
 // Digit recognition interface ================================================
