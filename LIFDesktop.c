@@ -277,7 +277,7 @@ void simulate(
       spikeCount[spikes[i]]++;
       for (int j = 0; j < t.numTargets; j++)
       {
-        inp[t.targets[j]] += (t.weights[j] * pstc_scale_float) /1024.; 
+        inp[t.targets[j]] += ( (t.weights[j]/1024) * pstc_scale_float); 
       }
     }
 
@@ -327,14 +327,14 @@ typedef struct {
 
 void assignExternalInput(Network* net, float* total, float* externalInput)
 {
-  int i, j;
+  //int i, j;
 
-  for (i = 0; i < net->sizeInputLayer; i++) total[i] = 0;
+  for (int i = 0; i < net->sizeInputLayer; i++) total[i] = 0;
 
-  for (i = 0; i < NUM_INPUTS; i++) {
+  for (int i = 0; i < NUM_INPUTS; i++) {
     TargetArray t = net->inTargets[i];
-    for (j = 0; j < t.numTargets; j++)
-      total[t.targets[j]] += (t.weights[j] * externalInput[i] ) / 1024. / 1024.;
+    for (int j = 0; j < t.numTargets; j++)
+      total[t.targets[j]] += ( (t.weights[j]/1024) * externalInput[i] ) / 1024.;
   }
 }
 
