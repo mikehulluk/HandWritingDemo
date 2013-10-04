@@ -41,7 +41,7 @@ float** readMatrix(const float* data, int rows, int cols)
   return m;
 }
 
-float** readFloatMatrix(const float* data, int rows, int cols)
+float** readFloatMatrix(const float* data, int rows, int cols, float downscale)
 {
   float** m;
   m = malloc(rows * sizeof(float*));
@@ -52,12 +52,15 @@ float** readFloatMatrix(const float* data, int rows, int cols)
 
     for(int x=0;x<cols;x++)
     {
-        m[i][x] /= 1024.f;
+        m[i][x] /= downscale;
     }
-
   }
   return m;
 }
+
+
+
+
 // Sample network (performs hand-written digit recognition) ===================
 
 // Each linear RBM neuron is represented by a trio of spiking LIF neurons
@@ -83,7 +86,7 @@ void createConstInput(float* constInput, int numNeuron,
   for (int i = 0; i < numNeuron; i++) {
     int base = i*lifPerNeuron;
     for (int j = 0; j < lifPerNeuron; j++)
-      constInput[base+j] = inp[0][i];
+      constInput[base+j] = inp[0][i]; //# / 1024;
   }
 }
 
@@ -119,14 +122,14 @@ Network* createNetwork()
 {
 
   /* Read the 4-layer RBM network available from nengo.ca */
-  float** b1 = readFloatMatrix(mat_1_b, 1, 1000);
-  float** w1 = readFloatMatrix(mat_1_w, 784, 1000);
-  float** b2 = readFloatMatrix(mat_2_b, 1, 500);
-  float** w2 = readFloatMatrix(mat_2_w, 1000, 500);
-  float** b3 = readFloatMatrix(mat_3_b, 1, 300);
-  float** w3 = readFloatMatrix(mat_3_w, 500, 300);
-  float** b4 = readFloatMatrix(mat_4_b, 1, 50);
-  float** w4 = readFloatMatrix(mat_4_w, 300, 50);
+  float** b1 = readFloatMatrix(mat_1_b, 1, 1000,   1024);
+  float** w1 = readFloatMatrix(mat_1_w, 784, 1000, 1);
+  float** b2 = readFloatMatrix(mat_2_b, 1, 500,    1024);
+  float** w2 = readFloatMatrix(mat_2_w, 1000, 500, 1);
+  float** b3 = readFloatMatrix(mat_3_b, 1, 300,    1024);
+  float** w3 = readFloatMatrix(mat_3_w, 500, 300,  1);
+  float** b4 = readFloatMatrix(mat_4_b, 1, 50,     1024);
+  float** w4 = readFloatMatrix(mat_4_w, 300, 50,   1);
 
   // Allocate Network
   Network* net = malloc(sizeof(Network));
@@ -153,19 +156,15 @@ Network* createNetwork()
 
   // Layer 2
   createConstInput(&net->constInput[1000*LIF_PER_RBM], 500, LIF_PER_RBM, b2);
-  createConnections(net->targets, 1000, 500, LIF_PER_RBM, LIF_PER_RBM,
-                      1000*LIF_PER_RBM, w2);
+  createConnections(net->targets, 1000, 500, LIF_PER_RBM, LIF_PER_RBM, 1000*LIF_PER_RBM, w2);
 
   // Layer 3
-  createConstInput(&net->constInput[(1000+500)*LIF_PER_RBM],
-                     300, LIF_PER_RBM, b3);
-  createConnections(&net->targets[1000*LIF_PER_RBM], 500, 300,
-                      LIF_PER_RBM, LIF_PER_RBM, (1000+500)*LIF_PER_RBM, w3);
+  createConstInput(&net->constInput[(1000+500)*LIF_PER_RBM], 300, LIF_PER_RBM, b3);
+  createConnections(&net->targets[1000*LIF_PER_RBM], 500, 300, LIF_PER_RBM, LIF_PER_RBM, (1000+500)*LIF_PER_RBM, w3);
 
   // Layer 4
   createConstInput(&net->constInput[(1000+500+300)*LIF_PER_RBM], 50, 1, b4);
-  createConnections(&net->targets[(1000+500)*LIF_PER_RBM], 300, 50,
-                      LIF_PER_RBM, 1, (1000+500+300)*LIF_PER_RBM, w4);
+  createConnections(&net->targets[(1000+500)*LIF_PER_RBM], 300, 50, LIF_PER_RBM, 1, (1000+500+300)*LIF_PER_RBM, w4);
 
   // Output layer
   for (int i = NUM_LIF_NEURONS-NUM_OUTPUTS; i < NUM_LIF_NEURONS; i++) {
@@ -270,7 +269,7 @@ void simulate(
       spikeCount[spikes[i]]++;
       for (int j = 0; j < t.numTargets; j++)
       {
-        inp[t.targets[j]] += (t.weights[j] * pstc_scale_float);
+        inp[t.targets[j]] += (t.weights[j] * pstc_scale_float) ;
       }
     }
 
@@ -278,8 +277,8 @@ void simulate(
     // Compute the total input into each neuron
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
     {
-      float s = (inp[i] + net->constInput[i]);
-      total[i] = (net->gain[i] * s / 1024.)+net->bias[i];
+      float s = (inp[i]/1024.+ net->constInput[i]);
+      total[i] = (net->gain[i] * s )+net->bias[i];
     }
 
 
@@ -289,7 +288,7 @@ void simulate(
     // except input layer
     for (int i = net->sizeInputLayer; i < NUM_LIF_NEURONS; i++)
     {
-      inp[i] = inp[i] * (1.- pstc_scale_float);
+      inp[i] = inp[i] * (1.- pstc_scale_float) ;
     }
 
 
