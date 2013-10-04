@@ -244,10 +244,6 @@ void simulate(
   int numSpikes = 0;
 
   for (int t = 0; t < ms; t++) {
-    // Decay neuron inputs (implementing the post-synaptic filter)
-    // except input layer
-    for (int i = net->sizeInputLayer; i < NUM_LIF_NEURONS; i++)
-      inp[i] = inp[i] * (1.- pstc_scale_float); //( 1024-pstc_scale) / 1024;
 
     // For each neuron that spikes, increase the input current
     // of all the neurons it is connected to by the synaptic
@@ -271,6 +267,14 @@ void simulate(
 
 
     numSpikes = runNeurons(total, v, ref, spikes);
+
+    // Decay neuron inputs (implementing the post-synaptic filter)
+    // except input layer
+    for (int i = net->sizeInputLayer; i < NUM_LIF_NEURONS; i++)
+      inp[i] = inp[i] * (1.- pstc_scale_float); 
+
+
+
   }
 }
 
