@@ -110,14 +110,14 @@ Network* createNetwork()
 {
 
   /* Read the 4-layer RBM network available from nengo.ca */
-  float** b1 = readMatrix(mat_1_b, 1, 1000);
-  float** w1 = readMatrix(mat_1_w, 784, 1000);
-  float** b2 = readMatrix(mat_2_b, 1, 500);
-  float** w2 = readMatrix(mat_2_w, 1000, 500);
-  float** b3 = readMatrix(mat_3_b, 1, 300);
-  float** w3 = readMatrix(mat_3_w, 500, 300);
-  float** b4 = readMatrix(mat_4_b, 1, 50);
-  float** w4 = readMatrix(mat_4_w, 300, 50);
+  float** b1 = readFloatMatrix(mat_1_b, 1, 1000);
+  float** w1 = readFloatMatrix(mat_1_w, 784, 1000);
+  float** b2 = readFloatMatrix(mat_2_b, 1, 500);
+  float** w2 = readFloatMatrix(mat_2_w, 1000, 500);
+  float** b3 = readFloatMatrix(mat_3_b, 1, 300);
+  float** w3 = readFloatMatrix(mat_3_w, 500, 300);
+  float** b4 = readFloatMatrix(mat_4_b, 1, 50);
+  float** w4 = readFloatMatrix(mat_4_w, 300, 50);
 
   // Allocate Network
   Network* net = malloc(sizeof(Network));
