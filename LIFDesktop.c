@@ -212,8 +212,8 @@ int runNeurons(float* input, float* v, float* ref, int* spikes)
   int numSpikes = 0;
 
   for (int i = 0; i < NUM_LIF_NEURONS; i++) {
-    float dV = (input[i]-v[i])  * one_over_rc_float;            // the LIF voltage change equation
-    v[i] += dV;
+    //float dV =             // the LIF voltage change equation
+    v[i] += (input[i]-v[i])  * one_over_rc_float;
     if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
 
     if (ref[i] > 0) {                     // if we are in our refractory period
@@ -229,6 +229,9 @@ int runNeurons(float* input, float* v, float* ref, int* spikes)
   }
   return numSpikes;
 }
+
+
+
 
 void simulate(
     Network* net
@@ -260,8 +263,7 @@ void simulate(
     // Compute the total input into each neuron
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
     {
-      total[i] = inp[i];
-      total[i] += net->constInput[i];
+      total[i] = inp[i] + net->constInput[i];
       total[i] = (net->gain[i]*total[i] / 1024.)+net->bias[i];
     }
 
