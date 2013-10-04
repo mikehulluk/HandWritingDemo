@@ -11,6 +11,10 @@
 #include <limits.h>
 #include <float.h>
 
+
+#include <iostream>
+#include <fstream>
+
 #include "Handwriting.h"
 
 // Data structures ============================================================
@@ -38,7 +42,7 @@ typedef struct {
 float** readMatrix(const float* data, int rows, int cols)
 {
   float** m;
-  m = malloc(rows * sizeof(float*));
+  m = (float**) malloc(rows * sizeof(float*));
   for (int i = 0; i < rows; i++)
     m[i] = (float*) &data[i*cols];
   return m;
@@ -47,10 +51,10 @@ float** readMatrix(const float* data, int rows, int cols)
 float** readFloatMatrix(const float* data, int rows, int cols, float downscale)
 {
   float** m;
-  m = malloc(rows * sizeof(float*));
+  m = (float**) malloc(rows * sizeof(float*));
   for (int i = 0; i < rows; i++)
   {
-    m[i] = malloc( cols * sizeof(float) );
+    m[i] = (float*) malloc( cols * sizeof(float) );
     memcpy(m[i],  &data[i*cols], sizeof(float)*cols );
 
     for(int x=0;x<cols;x++)
@@ -77,14 +81,13 @@ float** readFloatMatrix(const float* data, int rows, int cols, float downscale)
 
 float sigmoid_bias_fl[]    = {10.31933, 5.94921, 0.63964};
 float sigmoid_gain_fl[]    = {8.7792, 1.37988, 10.0195};
-float sigmoid_decoder_fl[] = {1.0292, 1.36914, 0.85937};
 
 void createConstInput(float* constInput, int numNeuron, int lifPerNeuron, float** inp)
 {
   for (int i = 0; i < numNeuron; i++) {
     int base = i*lifPerNeuron;
     for (int j = 0; j < lifPerNeuron; j++)
-      constInput[base+j] = inp[0][i]; 
+      constInput[base+j] = inp[0][i];
   }
 }
 
@@ -102,8 +105,8 @@ void createConnections(
     for (int j = 0; j < lifPerSource; j++) {
       int space = numTarget*lifPerTarget;
       t[base+j].numTargets = 0;
-      t[base+j].targets = malloc(sizeof(int) * space);
-      t[base+j].weights = malloc(sizeof(float) * space);
+      t[base+j].targets = (int*) malloc(sizeof(int) * space);
+      t[base+j].weights = (float*) malloc(sizeof(float) * space);
       for (int x = 0; x < numTarget; x++)
        if (weights[i][x] != 0)
         for (int y = 0; y < lifPerTarget; y++) {
@@ -130,14 +133,14 @@ Network* createNetwork()
   float** w4 = readFloatMatrix(mat_4_w, 300, 50,   1024);
 
   // Allocate Network
-  Network* net = malloc(sizeof(Network));
+  Network* net = (Network*) malloc(sizeof(Network));
   net->sizeInputLayer = 1000*LIF_PER_RBM;
   net->sizeOutputLayer = NUM_OUTPUTS;
-  net->gain = malloc(sizeof(float) * NUM_LIF_NEURONS);
-  net->bias = malloc(sizeof(float) * NUM_LIF_NEURONS);
-  net->constInput = malloc(sizeof(float) * NUM_LIF_NEURONS);
-  net->inTargets = malloc(sizeof(TargetArray) * NUM_INPUTS);
-  net->targets = malloc(sizeof(TargetArray) * NUM_LIF_NEURONS);
+  net->gain = (float*) malloc(sizeof(float) * NUM_LIF_NEURONS);
+  net->bias = (float*) malloc(sizeof(float) * NUM_LIF_NEURONS);
+  net->constInput =(float*) malloc(sizeof(float) * NUM_LIF_NEURONS);
+  net->inTargets = (TargetArray*)  malloc(sizeof(TargetArray) * NUM_INPUTS);
+  net->targets = (TargetArray*) malloc(sizeof(TargetArray) * NUM_LIF_NEURONS);
 
   // Set gain and bias of each internal LIF neuron
   for (int i = 0; i < NUM_RBM_NEURONS; i++) {
@@ -145,7 +148,7 @@ Network* createNetwork()
     for (int j = 0; j < LIF_PER_RBM; j++) {
       net->gain[base+j] = sigmoid_gain_fl[j];
       net->bias[base+j] = sigmoid_bias_fl[j];
-      
+
       //net->gain[base+j] = sigmoid_gain_fl[j];
       //net->bias[base+j] = sigmoid_bias_fl[j];
     }
@@ -195,11 +198,11 @@ void answer(Network* net, float** semPtr, float* inp, int* ans)
   float minScore = FLT_MAX;
 
   for (int i = 0; i < 10; i++) {
-    ans[i] = dot(semPtr[i], out); 
+    ans[i] = dot(semPtr[i], out);
     if (ans[i] >= maxScore) maxScore = ans[i];
     if (ans[i] <= minScore) minScore = ans[i];
   }
-  
+
   // Rescale the range from 0 to 140:
   maxScore += -minScore;
   for (int i = 0; i < 10; i++)
@@ -217,7 +220,13 @@ const int pstc_scale  = 158; // 1-e^(-dt/t_pstc);
 #define one_over_rc_float ((one_over_rc)/1024.)
 #define pstc_scale_float  ((pstc_scale) / 1024.)
 
+#include <iomanip>
+#include <vector>
+#include <sstream>
+#include <assert.h>
 
+
+using namespace std;
 
 void simulate(
     Network* net
@@ -232,8 +241,72 @@ void simulate(
 {
 
 
+
+
+    // Dump out the Simulation setup:
+    cout << "\n";
+
+    vector<int> pop_sizes;
+    pop_sizes.push_back(1000 * 3);
+    pop_sizes.push_back(500 * 3);
+    pop_sizes.push_back(300 * 3);
+    pop_sizes.push_back(50 * 3);
+
+    typedef std::pair<int, int> PopulationIndices;
+    vector<PopulationIndices> pop_indices;
+
+    pop_indices.push_back( PopulationIndices(0, pop_sizes[0]) );
+    for(size_t x=1; x<pop_sizes.size(); x++)
+    {
+        int offset = pop_indices.back().second;
+        pop_indices.push_back( PopulationIndices( offset, offset + pop_sizes[x] ) );
+        cout << "\noffset: " << offset;;
+    }
+
+    cout << "\n";
+
     // Dump out the current parameters:
-    //
+    for(size_t pop_index=0; pop_index < pop_sizes.size();pop_index++)
+    {
+        stringstream filename;
+        filename << "mh_conv_nrns_level" << pop_index;
+        std::ofstream of( filename.str().c_str() );
+
+        of << "# Level: " << pop_index;
+        of << "\n# index, bias, gain, constInput, inp";
+        of << std::setiosflags(std::ios::fixed) << std::setprecision(5);
+        for (int i = pop_indices[pop_index].first; i < pop_indices[pop_index].second; i++)
+        {
+            of << "\n" << i << ", " << net->bias[i] << ", " << net->gain[i] << ", " << net->constInput[i] << ", "  << inp[i];
+        }
+    }
+
+    //And the connections:
+    for(size_t src_index=0; src_index < pop_sizes.size()-1;src_index++)
+    {
+        stringstream filename;
+        filename << "mh_conv_conns_level" << src_index << "_" << src_index +1;
+        std::ofstream of( filename.str().c_str() );
+
+        for (int src_nrn_index = pop_indices[src_index].first; src_nrn_index < pop_indices[src_index].second; src_nrn_index++)
+        {
+            TargetArray t = net->targets[src_nrn_index];
+
+            for(int _dst_index =0; _dst_index != t.numTargets; _dst_index++)
+            {
+                int dst_real_index = t.targets[_dst_index];
+
+                int dst_real_index_offset = (dst_real_index - pop_indices[src_index+1].first);
+
+                assert( dst_real_index_offset < pop_sizes[src_index+1] ); // Range checking
+                assert( dst_real_index_offset >= 0); // Range checking
+                float weight = t.weights[_dst_index];
+                of << src_nrn_index-  pop_indices[src_index].first  << " -> " << dst_real_index_offset << " (" << weight << ")" << "\n";
+            }
+
+
+        }
+    }
 
 
 
@@ -241,51 +314,51 @@ void simulate(
 
 
 
-      for (int t = 0; t < ms; t++) 
+      for (int t = 0; t < ms; t++)
       {
-    
-    
-    
+
+
+
         // Compute the total input into each neuron
         for (int i = 0; i < NUM_LIF_NEURONS; i++)
         {
           total[i] = (net->gain[i] * (inp[i] + net->constInput[i])) + net->bias[i];
           v[i] += (total[i]-v[i]) * one_over_rc_float;
         }
-    
+
         // Decay neuron inputs (implementing the post-synaptic filter)
         // except input layer
         for (int i = net->sizeInputLayer; i < NUM_LIF_NEURONS; i++)
         {
           inp[i] *= (1.- pstc_scale_float) ;
         }
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
           int numSpikes = 0;
-    
+
           for (int i = 0; i < NUM_LIF_NEURONS; i++) {
             // the LIF voltage change equation
-    
+
             if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
-    
+
             if (ref[i] > 0) {                     // if we are in our refractory period
               v[i] = 0;                           //   keep voltage at zero and
               ref[i] -= 1;                        //   decrease the refractory period
             }
-    
+
             if (v[i] > 1.0) {                    // if we have hit threshold
               spikes[numSpikes++] = i;            //   spike
               v[i] = 0;                           //   reset the voltage
               ref[i] = t_ref;                     //   and set the refractory period
             }
           }
-    
-    
-    
+
+
+
         // For each neuron that spikes, increase the input current
         // of all the neurons it is connected to by the synaptic
         // connection weight
@@ -294,12 +367,12 @@ void simulate(
           spikeCount[spikes[i]]++;
           for (int j = 0; j < t.numTargets; j++)
           {
-            inp[t.targets[j]] += ( (t.weights[j]) * pstc_scale_float); 
+            inp[t.targets[j]] += ( (t.weights[j]) * pstc_scale_float);
           }
         }
-    
-    
-    
+
+
+
       }
 
 
@@ -335,15 +408,15 @@ void assignExternalInput(Network* net, float* total, float* externalInput)
 
 Recogniser* createRecogniser()
 {
-  Recogniser* r = malloc(sizeof(Recogniser));
+  Recogniser* r = (Recogniser*) malloc(sizeof(Recogniser));
   r->semPtr = readMatrix(SemPtr, 10, 50);
   r->net = createNetwork();
-  r->v = calloc(NUM_LIF_NEURONS, sizeof(float));
-  r->ref = calloc(NUM_LIF_NEURONS, sizeof(float));
-  r->inp = calloc(NUM_LIF_NEURONS, sizeof(float));
-  r->total = calloc(NUM_LIF_NEURONS, sizeof(float));
-  r->spikeCount = calloc(NUM_LIF_NEURONS, sizeof(int));
-  r->spikes = malloc(sizeof(int) * NUM_LIF_NEURONS);
+  r->v = (float*) calloc(NUM_LIF_NEURONS, sizeof(float));
+  r->ref = (float*) calloc(NUM_LIF_NEURONS, sizeof(float));
+  r->inp = (float*) calloc(NUM_LIF_NEURONS, sizeof(float));
+  r->total = (float*) calloc(NUM_LIF_NEURONS, sizeof(float));
+  r->spikeCount = (int*) calloc(NUM_LIF_NEURONS, sizeof(int));
+  r->spikes = (int*) malloc(sizeof(int) * NUM_LIF_NEURONS);
   r->samples = readFloatMatrix(samplesPtr, 100, 784, 1024);
   return r;
 }
@@ -386,6 +459,7 @@ int main()
     printf("%i ", ans);
 
     assert( ans == expected_ans[i] );
+    assert(0);
 
   }
   printf("\n");
