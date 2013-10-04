@@ -121,8 +121,8 @@ Network* createNetwork()
   for (int i = 0; i < NUM_RBM_NEURONS; i++) {
     int base = i*LIF_PER_RBM;
     for (int j = 0; j < LIF_PER_RBM; j++) {
-      net->gain[base+j] = sigmoid_gain[j];
-      net->bias[base+j] = sigmoid_bias[j];
+      net->gain[base+j] = sigmoid_gain[j] / 1024. ;
+      net->bias[base+j] = sigmoid_bias[j] / 1024. ;
     }
   }
 
@@ -257,7 +257,7 @@ void simulate(
     {
       total[i] = inp[i] + net->constInput[i];
       total[i] = (net->gain[i]*total[i] / 1024.)+net->bias[i];
-      total[i] /= 1024.;
+      //total[i] /= 1024.;
     }
 
 
