@@ -187,7 +187,7 @@ float dot(float* v, float* w)
 // in the range 0 to 140.
 void answer(Network* net, float** semPtr, float* inp, int* ans)
 {
-  float* out = inp * 1024 +(NUM_LIF_NEURONS-net->sizeOutputLayer);
+  float* out = inp +(NUM_LIF_NEURONS-net->sizeOutputLayer);
   int maxScore = 0x80000000;
   int minScore = 0x7fffffff;
 
@@ -269,7 +269,7 @@ void simulate(
       spikeCount[spikes[i]]++;
       for (int j = 0; j < t.numTargets; j++)
       {
-        inp[t.targets[j]] += (t.weights[j] * pstc_scale_float) /1024.;
+        inp[t.targets[j]] += (t.weights[j] * pstc_scale_float);
       }
     }
 
@@ -277,7 +277,7 @@ void simulate(
     // Compute the total input into each neuron
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
     {
-      float s = (inp[i] + net->constInput[i]);
+      float s = (inp[i]/1024 + net->constInput[i]);
       total[i] = (net->gain[i] * s )+net->bias[i];
     }
 
