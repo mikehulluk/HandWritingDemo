@@ -305,7 +305,7 @@ void simulate(
 
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
     {
-      inp[i] *= 1024;
+      inp[i] *= 1024.;
     }
 
 
@@ -334,7 +334,7 @@ void assignExternalInput(Network* net, float* total, float* externalInput)
   for (int i = 0; i < NUM_INPUTS; i++) {
     TargetArray t = net->inTargets[i];
     for (int j = 0; j < t.numTargets; j++)
-      total[t.targets[j]] += ( (t.weights[j]) * externalInput[i] ) / 1024.;
+      total[t.targets[j]] += ( (t.weights[j]) * externalInput[i] );
   }
 }
 
@@ -349,7 +349,7 @@ Recogniser* createRecogniser()
   r->total = calloc(NUM_LIF_NEURONS, sizeof(float));
   r->spikeCount = calloc(NUM_LIF_NEURONS, sizeof(int));
   r->spikes = malloc(sizeof(int) * NUM_LIF_NEURONS);
-  r->samples = readMatrix(samplesPtr, 100, 784);
+  r->samples = readFloatMatrix(samplesPtr, 100, 784, 1024);
   return r;
 }
 
