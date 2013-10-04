@@ -41,6 +41,14 @@ float** readMatrix(const float* data, int rows, int cols)
   return m;
 }
 
+float** readFloatMatrix(const float* data, int rows, int cols)
+{
+  float** m;
+  m = malloc(rows * sizeof(float*));
+  for (int i = 0; i < rows; i++)
+    m[i] = (float*) &data[i*cols] / 1024.;
+  return m;
+}
 // Sample network (performs hand-written digit recognition) ===================
 
 // Each linear RBM neuron is represented by a trio of spiking LIF neurons
@@ -52,9 +60,13 @@ float** readMatrix(const float* data, int rows, int cols)
 #define NUM_LIF_NEURONS (NUM_RBM_NEURONS*LIF_PER_RBM + NUM_OUTPUTS)
 
 // The bias, gain and decoder of every LIF neuron trio
-int sigmoid_bias[]    = {10567, 6092, 655};
-int sigmoid_gain[]    = {8990, 1413, 10260};
-int sigmoid_decoder[] = {1054, 1402, 880};
+//int sigmoid_bias[]    = {10567, 6092, 655};
+//int sigmoid_gain[]    = {8990, 1413, 10260};
+//int sigmoid_decoder[] = {1054, 1402, 880};
+
+float sigmoid_bias_fl[]    = {10.31933, 5.94921, 0.63964};
+float sigmoid_gain_fl[]    = {8.7792, 1.37988, 10.0195};
+float sigmoid_decoder_fl[] = {1.0292, 1.36914, 0.85937};
 
 void createConstInput(float* constInput, int numNeuron,
                         int lifPerNeuron, float** inp)
@@ -121,8 +133,8 @@ Network* createNetwork()
   for (int i = 0; i < NUM_RBM_NEURONS; i++) {
     int base = i*LIF_PER_RBM;
     for (int j = 0; j < LIF_PER_RBM; j++) {
-      net->gain[base+j] = sigmoid_gain[j] / 1024. ;
-      net->bias[base+j] = sigmoid_bias[j] / 1024. ;
+      net->gain[base+j] = sigmoid_gain_fl[j];
+      net->bias[base+j] = sigmoid_bias_fl[j];
     }
   }
 
@@ -204,8 +216,9 @@ int runNeurons(float* input, float* v, float* ref, int* spikes)
   int numSpikes = 0;
 
   for (int i = 0; i < NUM_LIF_NEURONS; i++) {
-    //float dV =             // the LIF voltage change equation
-    v[i] += (input[i]-v[i])  * one_over_rc_float;
+    // the LIF voltage change equation
+    v[i] += (input[i]-v[i]) * one_over_rc_float;
+
     if (v[i] < 0) v[i] = 0;               // don't allow voltage to go below 0
 
     if (ref[i] > 0) {                     // if we are in our refractory period
@@ -248,16 +261,16 @@ void simulate(
       spikeCount[spikes[i]]++;
       for (int j = 0; j < t.numTargets; j++)
       {
-        inp[t.targets[j]] += (t.weights[j] * pstc_scale)/ 1024;
+        inp[t.targets[j]] += (t.weights[j] * pstc_scale_float);
       }
     }
+
 
     // Compute the total input into each neuron
     for (int i = 0; i < NUM_LIF_NEURONS; i++)
     {
-      total[i] = inp[i] + net->constInput[i];
-      total[i] = (net->gain[i]*total[i] / 1024.)+net->bias[i];
-      //total[i] /= 1024.;
+      float s = (inp[i] + net->constInput[i]);
+      total[i] = (net->gain[i] * s / 1024.)+net->bias[i];
     }
 
 
@@ -266,8 +279,9 @@ void simulate(
     // Decay neuron inputs (implementing the post-synaptic filter)
     // except input layer
     for (int i = net->sizeInputLayer; i < NUM_LIF_NEURONS; i++)
-      inp[i] = inp[i] * (1.- pstc_scale_float); 
-
+    {
+      inp[i] = inp[i] * (1.- pstc_scale_float);
+    }
 
 
   }
