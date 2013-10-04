@@ -1,3 +1,7 @@
+
+
+
+
 Sim: Handwriting.h LIFDesktop.c
 	gcc -Wall -O2  -std=c99 LIFDesktop.c -o Sim
 
@@ -6,7 +10,7 @@ Output/flash.bin Handwriting.h: TextToBin
 	@echo "New version of Handwriting.h has been generated"
 
 TextToBin:
-	g++ TextToBin.c -o TextToBin
+	gcc TextToBin.c -o TextToBin
 
 .PHONY: clean
 
