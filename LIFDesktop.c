@@ -193,11 +193,6 @@ void answer(Network* net, float** semPtr, float* inp, int* ans)
   int minScore = 0x7fffffff;
 
 
-  for (int i = 0; i < 50; i++) {
-        //printf("\nOut: %d %f", i, out[i]);
-  }
-  //return; 
-
 
   for (int i = 0; i < 10; i++) {
     ans[i] = dot(semPtr[i], out);
